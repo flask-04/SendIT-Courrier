@@ -21,6 +21,34 @@ api= Api(app)
 def handle_not_found(e):
     return render_template('index.html', title='Homepage', message='Welcome to our website!')
 
+class UsersList(Resource):
+    def get(self):
+        users = User.query.all()
+        return [{"id": user.id, "username": user.username, "email":user.email} for user in users] 
+
+    def post(self):
+        data = request.get_json()
+        username = data['username']
+        email =data ['email']
+        password = data['password']
+        
+
+        if not username:
+            abort(400, description="Username is required.")
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            abort(400, description="User with this username already exists.")
+
+        new_user = User(username=username, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        response = make_response(jsonify(new_user.serialize()), 201)
+        return response
+
+api.add_resource(UsersList, "/users")
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
