@@ -19,7 +19,7 @@ api= Api(app)
 
 @app.errorhandler(NotFound)
 def handle_not_found(e):
-    return render_template('index.html', title='Homepage', message='Welcome to our website!')
+    return render_template('index.html', title='Homepage', message='Welcome to SendIT')
 
 class UsersList(Resource):
     def get(self):
