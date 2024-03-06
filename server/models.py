@@ -21,7 +21,7 @@ class User(db.Model,SerializerMixin):
     # validates email
     @validates('email')
     def validate_email(self, key, email):
-        email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'    
+        email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,}$'   
         if not re.match(email_pattern, email):
             raise ValueError('Invalid email format')
         
