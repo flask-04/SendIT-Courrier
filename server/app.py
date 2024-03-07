@@ -19,7 +19,42 @@ api = Api(app)
 def handle_not_found(e):
     return jsonify({"message": "Resource not found"}), 404
 
+class UsersByID(Resource):
+    def get(self, user_id):
+        user = User.query.get(user_id)
+        if user:
+            return {"id": user.id, "username": user.username, "email":user.email}
+        else:
+            raise NotFound("User not found")
+        
+    def delete(self, user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return {'error':'User does not exist'},404
+        else:
+            db.session.delete(user)
+            db.session.commit()
+            response = make_response(jsonify({'Message':'User deleted'}), 200)
+            return response
+    
+    def patch(self, user_id):
 
+        existing_user = User.query.get(user_id)
+        if not existing_user:
+            return {'error':'User does not exist'},404
+        
+        data = request.get_json()
+        if 'username' in data:
+            existing_user.username = data['username']
+        elif 'email' in data:
+            existing_user.email = data['email']
+        else:
+            return {'error':'No field to update provided'},400
+
+        db.session.commit()
+
+        response = make_response(jsonify(existing_user.serialize()), 200)
+        return response
 class ParcelResource(Resource):
     def get(self, parcel_id):
         parcel = Parcel.query.get_or_404(parcel_id)
@@ -205,6 +240,7 @@ class UserNotificationsList(Resource):
         return response
 
 
+
 # Add routes for managing parcels, deliveries, locations, and user notifications
 api.add_resource(ParcelResource, "/parcels/<int:parcel_id>")
 api.add_resource(ParcelsList, "/parcels")
@@ -214,6 +250,9 @@ api.add_resource(LocationResource, "/locations/<int:location_id>")
 api.add_resource(LocationsList, "/locations")
 api.add_resource(UserNotificationResource, "/user_notifications/<int:notification_id>")
 api.add_resource(UserNotificationsList, "/user_notifications")
+api.add_resource(UsersByID, "/users/<int:user_id>")
+
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
