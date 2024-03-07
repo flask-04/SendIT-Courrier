@@ -1,4 +1,4 @@
-from flask import Flask, make_response, request, jsonify, abort
+from flask import Flask, make_response, request, jsonify, abort, render_template
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from werkzeug.exceptions import NotFound
@@ -17,7 +17,35 @@ api = Api(app)
 
 @app.errorhandler(NotFound)
 def handle_not_found(e):
-    return jsonify({"message": "Resource not found"}), 404
+    return render_template('index.html', title='Homepage', message='Welcome to SendIT')
+
+class UsersList(Resource):
+    def get(self):
+        users = User.query.all()
+        return [{"id": user.id, "username": user.username, "email":user.email} for user in users] 
+
+    def post(self):
+        data = request.get_json()
+        username = data['username']
+        email =data ['email']
+        password = data['password']
+
+
+        if not username:
+            abort(400, description="Username is required.")
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            abort(400, description="User with this username already exists.")
+
+        new_user = User(username=username, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        response = make_response(jsonify(new_user.serialize()), 201)
+        return response
+
+api.add_resource(UsersList, "/users")
 
 class UsersByID(Resource):
     def get(self, user_id):
@@ -121,11 +149,14 @@ class DeliveryResource(Resource):
         return delivery.serialize()
 
     def delete(self, delivery_id):
-        delivery = Delivery.query.get_or_404(delivery_id)
-        db.session.delete(delivery)
-        db.session.commit()
-        return '', 204
-
+        delivery = Delivery.query.get(delivery_id)
+        if not delivery :
+            return {'error':'Delivery does not exist'},404
+        else :
+            db.session.delete(delivery)
+            db.session.commit()
+            response = make_response(jsonify({'Message':'Delivery deleted'}), 200)
+            return response
 
 class DeliveriesList(Resource):
     def get(self):
@@ -152,10 +183,16 @@ class DeliveriesList(Resource):
 
 class LocationResource(Resource):
     def get(self, location_id):
-        location = Location.query.get_or_404(location_id)
-        return location.serialize()
+        location = Location.query.get(location_id)
+        if location:
+            return {"id":location.id,"delivery_id":location.delivery_id,"location":location.location, "status":location.status}
+        else:
+            raise NotFound("Location not found")
 
     def patch(self, location_id):
+        existing_location = Location.query.get(location_id)
+        if not existing_location:
+            return {'error':'Location does not exist'},404
         data = request.get_json()
         location = Location.query.get_or_404(location_id)
 
@@ -168,10 +205,14 @@ class LocationResource(Resource):
         return location.serialize()
 
     def delete(self, location_id):
-        location = Location.query.get_or_404(location_id)
-        db.session.delete(location)
-        db.session.commit()
-        return '', 204
+        location = Location.query.get(location_id)
+        if location is None :
+            return{"error":"This delivery location does not exist"},404
+        else:
+            db.session.delete(location)
+            db.session.commit()
+            response =make_response(jsonify({"message":"Location successfully deleted"}), 200)
+            return response
 
 
 class LocationsList(Resource):
@@ -198,24 +239,34 @@ class LocationsList(Resource):
 
 class UserNotificationResource(Resource):
     def get(self, notification_id):
-        notification = UserNotification.query.get_or_404(notification_id)
+        notification = UserNotification.query.get(notification_id)
+        if notification is None:
+            abort(404, "Notification id '{}' does not exist.".format(notification_id))
         return notification.serialize()
 
     def patch(self, notification_id):
+        existing_notification = UserNotification.query.get(notification_id)
+        if not existing_notification:
+            return {'error':'Notification does not exist'},404
         data = request.get_json()
-        notification = UserNotification.query.get_or_404(notification_id)
-
         if 'notification' in data:
-            notification.notification = data['notification']
+            existing_notification.notification = data['notification']
+        else:
+            return {'error':'No field to update provided'},400
 
         db.session.commit()
-        return notification.serialize()
+        response = make_response(jsonify(existing_notification.serialize()), 200)
+        return response
 
     def delete(self, notification_id):
-        notification = UserNotification.query.get_or_404(notification_id)
-        db.session.delete(notification)
-        db.session.commit()
-        return '', 204
+        notification = UserNotification.query.get(notification_id)
+        if notification is None:
+            return {"error": "Notification does not exist."}, 404
+        else:
+            db.session.delete(notification)
+            db.session.commit()
+            response =make_response(jsonify({"message":"Notification successfully deleted"}), 200)
+            return response
 
 
 class UserNotificationsList(Resource):
@@ -248,8 +299,8 @@ api.add_resource(DeliveryResource, "/deliveries/<int:delivery_id>")
 api.add_resource(DeliveriesList, "/deliveries")
 api.add_resource(LocationResource, "/locations/<int:location_id>")
 api.add_resource(LocationsList, "/locations")
-api.add_resource(UserNotificationResource, "/user_notifications/<int:notification_id>")
-api.add_resource(UserNotificationsList, "/user_notifications")
+api.add_resource(UserNotificationResource, "/notifications/<int:notification_id>")
+api.add_resource(UserNotificationsList, "/notifications")
 api.add_resource(UsersByID, "/users/<int:user_id>")
 
 
