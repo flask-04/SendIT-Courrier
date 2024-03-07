@@ -1,4 +1,4 @@
-from flask import Flask, make_response, request, jsonify, abort, render_template
+from flask import Flask, make_response, request, jsonify, abort
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from werkzeug.exceptions import NotFound
@@ -17,10 +17,7 @@ api = Api(app)
 
 @app.errorhandler(NotFound)
 def handle_not_found(e):
-    return render_template('index.html', title='Homepage', message='Welcome to SendIT')
-
-
-
+    return jsonify({"message": "Resource not found"}), 404
 
 
 class ParcelResource(Resource):
@@ -46,6 +43,7 @@ class ParcelResource(Resource):
         db.session.commit()
         return '', 204
 
+
 class ParcelsList(Resource):
     def get(self):
         parcels = Parcel.query.all()
@@ -66,6 +64,7 @@ class ParcelsList(Resource):
 
         response = make_response(jsonify(parcel.serialize()), 201)
         return response
+
 
 class DeliveryResource(Resource):
     def get(self, delivery_id):
@@ -92,6 +91,7 @@ class DeliveryResource(Resource):
         db.session.commit()
         return '', 204
 
+
 class DeliveriesList(Resource):
     def get(self):
         deliveries = Delivery.query.all()
@@ -113,6 +113,7 @@ class DeliveriesList(Resource):
 
         response = make_response(jsonify(delivery.serialize()), 201)
         return response
+
 
 class LocationResource(Resource):
     def get(self, location_id):
@@ -137,6 +138,7 @@ class LocationResource(Resource):
         db.session.commit()
         return '', 204
 
+
 class LocationsList(Resource):
     def get(self):
         locations = Location.query.all()
@@ -157,6 +159,7 @@ class LocationsList(Resource):
 
         response = make_response(jsonify(location.serialize()), 201)
         return response
+
 
 class UserNotificationResource(Resource):
     def get(self, notification_id):
@@ -179,6 +182,7 @@ class UserNotificationResource(Resource):
         db.session.commit()
         return '', 204
 
+
 class UserNotificationsList(Resource):
     def get(self):
         notifications = UserNotification.query.all()
@@ -200,12 +204,16 @@ class UserNotificationsList(Resource):
         response = make_response(jsonify(notification.serialize()), 201)
         return response
 
+
 # Add routes for managing parcels, deliveries, locations, and user notifications
-api.add_resource(LocationResource, "/locations/int:location_id")
+api.add_resource(ParcelResource, "/parcels/<int:parcel_id>")
+api.add_resource(ParcelsList, "/parcels")
+api.add_resource(DeliveryResource, "/deliveries/<int:delivery_id>")
+api.add_resource(DeliveriesList, "/deliveries")
+api.add_resource(LocationResource, "/locations/<int:location_id>")
 api.add_resource(LocationsList, "/locations")
-api.add_resource(UserNotificationResource, "/user_notifications/int:notification_id")
+api.add_resource(UserNotificationResource, "/user_notifications/<int:notification_id>")
 api.add_resource(UserNotificationsList, "/user_notifications")
-api.add_resource(UsersList, "/users")
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
