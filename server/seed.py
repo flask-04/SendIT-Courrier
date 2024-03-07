@@ -110,3 +110,11 @@ with app.app_context():
         db.session.add(notification)
 
     db.session.commit()
+
+
+
+
+
+
+
+
