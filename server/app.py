@@ -49,6 +49,45 @@ class UsersList(Resource):
 
 api.add_resource(UsersList, "/users")
 
+class UsersByID(Resource):
+    def get(self, user_id):
+        user = User.query.get(user_id)
+        if user:
+            return {"id": user.id, "username": user.username, "email":user.email}
+        else:
+            raise NotFound("User not found")
+        
+    def delete(self, user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return {'error':'User does not exist'},404
+        else:
+            db.session.delete(user)
+            db.session.commit()
+            response = make_response(jsonify({'Message':'User deleted'}), 200)
+            return response
+    
+    def patch(self, user_id):
+
+        existing_user = User.query.get(user_id)
+        if not existing_user:
+            return {'error':'User does not exist'},404
+        
+        data = request.get_json()
+        if 'username' in data:
+            existing_user.username = data['username']
+        elif 'email' in data:
+            existing_user.email = data['email']
+        else:
+            return {'error':'No field to update provided'},400
+
+        db.session.commit()
+
+        response = make_response(jsonify(existing_user.serialize()), 200)
+        return response
+
+api.add_resource(UsersByID, "/users/<int:user_id>")
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
