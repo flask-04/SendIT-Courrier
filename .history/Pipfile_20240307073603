@@ -16,3 +16,9 @@ werkzeug = "*"
 
 [requires]
 python_version = "3.10"
+
+api.add_resource(UsersList, "/users")
+
+
+if __name__ == '__main__':
+    app.run(port=5555, debug=True)
