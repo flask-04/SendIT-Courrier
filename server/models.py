@@ -18,7 +18,7 @@ class User(db.Model,SerializerMixin):
     parcels = db.relationship('Parcel', backref='user')
     notifications = db.relationship('UserNotification', backref='user', foreign_keys='UserNotification.user_id')
 
-    # validates email
+    # validate email
     @validates('email')
     def validate_email(self, key, email):
         email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,}$'   
@@ -105,3 +105,15 @@ class UserNotification(db.Model , SerializerMixin):
                'notification': self.notification,
                'delivery_id' : self.delivery_id
                }
+    
+class TokenBlocklist(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    jti = db.Column(db.String(), nullable=True)
+    create_at = db.Column(db.DateTime(), default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Token {self.jti}>"
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
