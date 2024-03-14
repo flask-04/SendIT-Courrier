@@ -11,6 +11,8 @@ flask-bcrypt = "*"
 flask-migrate = "*"
 flask-restful = "*"
 werkzeug = "*"
+flask-jwt-extended = "*"
+flask-cors = "*"
 
 [dev-packages]
 
