@@ -22,16 +22,19 @@ jwt.init_app(app)
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
-# @app.errorhandler(NotFound)
-# def handle_not_found(e):
-#     return render_template('index.html', title='Homepage', message='Welcome to SendIT')
+@app.errorhandler(NotFound)
+def handle_not_found(e):
+    response= make_response("NotFound: The requested resource not found", 404)
+    return response
 
 
 class ParcelResource(Resource):
+    @jwt_required()
     def get(self, parcel_id):
         parcel = Parcel.query.get_or_404(parcel_id)
         return parcel.serialize()
 
+    @jwt_required()
     def patch(self, parcel_id):
         data = request.get_json()
         parcel = Parcel.query.get_or_404(parcel_id)
@@ -44,6 +47,7 @@ class ParcelResource(Resource):
         db.session.commit()
         return parcel.serialize()
 
+    @jwt_required()
     def delete(self, parcel_id):
         parcel = Parcel.query.get_or_404(parcel_id)
         db.session.delete(parcel)
@@ -52,10 +56,11 @@ class ParcelResource(Resource):
 
 
 class ParcelsList(Resource):
+    @jwt_required()
     def get(self):
         parcels = Parcel.query.all()
         return [parcel.serialize() for parcel in parcels]
-
+    @jwt_required()
     def post(self):
         data = request.get_json()
         user_id = data.get('user_id')
@@ -74,10 +79,12 @@ class ParcelsList(Resource):
 
 
 class DeliveryResource(Resource):
+    @jwt_required()
     def get(self, delivery_id):
         delivery = Delivery.query.get_or_404(delivery_id)
         return delivery.serialize()
 
+    @jwt_required()
     def patch(self, delivery_id):
         data = request.get_json()
         delivery = Delivery.query.get_or_404(delivery_id)
@@ -92,6 +99,7 @@ class DeliveryResource(Resource):
         db.session.commit()
         return delivery.serialize()
 
+    @jwt_required()
     def delete(self, delivery_id):
         delivery = Delivery.query.get(delivery_id)
         if not delivery :
@@ -103,10 +111,12 @@ class DeliveryResource(Resource):
             return response
 
 class DeliveriesList(Resource):
+    @jwt_required()
     def get(self):
         deliveries = Delivery.query.all()
         return [delivery.serialize() for delivery in deliveries]
 
+    @jwt_required()
     def post(self):
         data = request.get_json()
         parcel_id = data.get('parcel_id')
@@ -126,13 +136,15 @@ class DeliveriesList(Resource):
 
 
 class LocationResource(Resource):
+    @jwt_required()
     def get(self, location_id):
         location = Location.query.get(location_id)
         if location:
             return {"id":location.id,"delivery_id":location.delivery_id,"location":location.location, "status":location.status}
         else:
             raise NotFound("Location not found")
-
+        
+    @jwt_required()
     def patch(self, location_id):
         existing_location = Location.query.get(location_id)
         if not existing_location:
@@ -148,6 +160,7 @@ class LocationResource(Resource):
         db.session.commit()
         return location.serialize()
 
+    @jwt_required()
     def delete(self, location_id):
         location = Location.query.get(location_id)
         if location is None :
@@ -160,10 +173,12 @@ class LocationResource(Resource):
 
 
 class LocationsList(Resource):
+    @jwt_required()
     def get(self):
         locations = Location.query.all()
         return [location.serialize() for location in locations]
 
+    @jwt_required()
     def post(self):
         data = request.get_json()
         delivery_id = data.get('delivery_id')
@@ -182,12 +197,14 @@ class LocationsList(Resource):
 
 
 class UserNotificationResource(Resource):
+    @jwt_required()
     def get(self, notification_id):
         notification = UserNotification.query.get(notification_id)
         if notification is None:
             abort(404, "Notification id '{}' does not exist.".format(notification_id))
         return notification.serialize()
 
+    @jwt_required()
     def patch(self, notification_id):
         existing_notification = UserNotification.query.get(notification_id)
         if not existing_notification:
@@ -202,6 +219,7 @@ class UserNotificationResource(Resource):
         response = make_response(jsonify(existing_notification.serialize()), 200)
         return response
 
+    @jwt_required()
     def delete(self, notification_id):
         notification = UserNotification.query.get(notification_id)
         if notification is None:
@@ -214,10 +232,12 @@ class UserNotificationResource(Resource):
 
 
 class UserNotificationsList(Resource):
+    @jwt_required()
     def get(self):
         notifications = UserNotification.query.all()
         return [notification.serialize() for notification in notifications]
 
+    @jwt_required()
     def post(self):
         data = request.get_json()
         user_id = data.get('user_id')
